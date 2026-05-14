@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Devindi Salon</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;600&family=Noto+Sans+Sinhala:wght@300;400;700&display=swap" rel="stylesheet"/>
+
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <!-- Three.js for 3D -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --blush: #f9c8d4;
+      --rose:  #e88fa3;
+      --deep:  #c0566e;
+      --petal: #fce8ed;
+      --cream: #fff6f8;
+      --gold:  #c9956c;
+      --text:  #3a1a22;
+      --muted: #a0697a;
+      --white: #ffffff;
+      --shadow: 0 8px 40px rgba(200,86,110,0.13);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Cormorant Garamond', serif;
+      background: var(--cream);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ─── LANGUAGE TOGGLE ─── */
+    #lang-toggle {
+      position: fixed;
+      top: 18px; right: 22px;
+      z-index: 9999;
+      display: flex;
+      gap: 6px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 30px;
+      padding: 6px 10px;
+      box-shadow: 0 4px 20px rgba(200,86,110,0.18);
+      border: 1px solid var(--blush);
+    }
+    #lang-toggle button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 5px 14px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all .3s;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    #lang-toggle button.active {
+      background: linear-gradient(135deg, var(--rose), var(--deep));
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(200,86,110,0.3);
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 72px;
+      background: rgba(255,246,248,0.85);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(249,200,212,0.4);
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--deep);
+      letter-spacing: 1px;
+    }
+    .nav-logo span { color: var(--gold); font-style: italic; }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none;
+      font-size: 15px;
+      color: var(--muted);
+      letter-spacing: .5px;
+      transition: color .3s;
+      font-weight: 600;
+    }
+    .nav-links a:hover { color: var(--deep); }
+
+    /* ─── HERO ─── */
+    #hero {
+      position: relative;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, rgba(252,232,237,0.82) 0%, rgba(255,246,248,0.55) 60%, rgba(200,86,110,0.08) 100%);
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 20px;
+    }
+    .hero-eyebrow {
+      font-size: 13px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeUp .8s .2s forwards;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(52px, 8vw, 100px);
+      line-height: 1.05;
+      color: var(--deep);
+      opacity: 0;
+      animation: fadeUp .9s .4s forwards;
+    }
+    .hero-title em { color: var(--gold); font-style: italic; }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 22px);
+      color: var(--muted);
+      margin: 22px 0 38px;
+      font-weight: 300;
+      opacity: 0;
+      animation: fadeUp .9s .6s forwards;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp .9s .8s forwards;
+    }
+    .btn-primary {
+      padding: 15px 38px;
+      background: linear-gradient(135deg, var(--rose), var(--deep));
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 28px rgba(200,86,110,0.35);
+      transition: transform .3s, box-shadow .3s;
+      text-decoration: none;
+      letter-spacing: .5px;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(200,86,110,0.45); }
+    .btn-outline {
+      padding: 15px 38px;
+      background: transparent;
+      color: var(--deep);
+      border: 2px solid var(--rose);
+      border-radius: 50px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .3s;
+      text-decoration: none;
+    }
+    .btn-outline:hover { background: var(--rose); color: #fff; }
+
+    /* floating petals */
+    .petal-float {
+      position: absolute;
+      border-radius: 50% 0 50% 0;
+      opacity: .18;
+      animation: floatPetal linear infinite;
+      z-index: 1;
+    }
+
+    /* ─── SECTION SHARED ─── */
+    section { padding: 90px 48px; }
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 4vw, 52px);
+      color: var(--deep);
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 580px;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+    .divider {
+      width: 60px; height: 3px;
+      background: linear-gradient(90deg, var(--rose), var(--gold));
+      border-radius: 3px;
+      margin: 20px 0 36px;
+    }
+
+    /* ─── SERVICES ─── */
+    #services { background: var(--white); }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 28px;
+      margin-top: 48px;
+    }
+    .service-card {
+      background: var(--cream);
+      border-radius: 24px;
+      padding: 36px 28px;
+      border: 1px solid rgba(249,200,212,0.5);
+      transition: transform .4s, box-shadow .4s;
+      position: relative;
+      overflow: hidden;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blush), var(--rose));
+      opacity: .15;
+      transition: transform .4s;
+    }
+    .service-card:hover { transform: translateY(-8px); box-shadow: var(--shadow); }
+    .service-card:hover::before { transform: scale(1.5); }
+    .service-icon { font-size: 36px; margin-bottom: 16px; }
+    .service-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: var(--deep);
+      margin-bottom: 10px;
+    }
+    .service-desc { font-size: 15px; color: var(--muted); line-height: 1.6; }
+    .service-price {
+      margin-top: 14px;
+      font-size: 15px;
+      color: var(--rose);
+      font-weight: 600;
+    }
+
+    /* ─── ABOUT ─── */
+    #about {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      background: linear-gradient(135deg, var(--petal) 0%, var(--cream) 100%);
+    }
+    .about-visual {
+      position: relative;
+      height: 480px;
+    }
+    .about-blob {
+      position: absolute;
+      inset: 0;
+      border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%;
+      background: linear-gradient(135deg, var(--blush), var(--rose));
+      opacity: .25;
+      animation: blobMorph 7s ease-in-out infinite;
+    }
+    .about-card {
+      position: absolute;
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px 28px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--blush);
+    }
+    .about-card.card1 { bottom: 30px; left: 20px; }
+    .about-card.card2 { top: 40px; right: 10px; }
+    .about-card-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 40px;
+      color: var(--rose);
+      font-style: italic;
+    }
+    .about-card-label { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+
+    /* ─── APPOINTMENT ─── */
+    #appointment { background: var(--white); }
+    .appt-wrapper {
+      max-width: 750px;
+      margin: 48px auto 0;
+      background: var(--cream);
+      border-radius: 32px;
+      padding: 48px;
+      border: 1px solid rgba(249,200,212,0.6);
+      box-shadow: var(--shadow);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group label {
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 13px 18px;
+      border: 1.5px solid var(--blush);
+      border-radius: 12px;
+      background: #fff;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      color: var(--text);
+      outline: none;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 4px rgba(232,143,163,0.12);
+    }
+    .form-group textarea { resize: vertical; min-height: 90px; }
+    .form-full { grid-column: 1 / -1; }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--rose), var(--deep));
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: transform .3s, box-shadow .3s;
+      box-shadow: 0 6px 28px rgba(200,86,110,0.3);
+      letter-spacing: .5px;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(200,86,110,0.4); }
+    .submit-btn:disabled { opacity: .7; cursor: not-allowed; }
+    #form-msg {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 16px;
+      border-radius: 10px;
+      padding: 12px;
+      display: none;
+    }
+    #form-msg.success { background: #d4edda; color: #155724; display: block; }
+    #form-msg.error   { background: #f8d7da; color: #721c24; display: block; }
+
+    /* ─── MAP & CONTACT ─── */
+    #contact {
+      background: linear-gradient(135deg, var(--petal), var(--cream));
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .contact-info { display: flex; flex-direction: column; gap: 28px; }
+    .contact-item { display: flex; align-items: flex-start; gap: 16px; }
+    .contact-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--rose), var(--deep));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(200,86,110,0.25);
+    }
+    .contact-detail-label {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--rose);
+      font-weight: 600;
+    }
+    .contact-detail-value { font-size: 16px; color: var(--text); margin-top: 3px; }
+    .map-container {
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 2px solid var(--blush);
+      height: 380px;
+    }
+    .map-container iframe { width: 100%; height: 100%; border: none; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--deep);
+      color: rgba(255,255,255,0.85);
+      text-align: center;
+      padding: 36px 48px;
+    }
+    footer .foot-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    footer .foot-logo span { color: var(--blush); font-style: italic; }
+    footer p { font-size: 14px; opacity: .7; margin-top: 8px; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes floatPetal {
+      0%   { transform: translateY(110vh) rotate(0deg); opacity: .2; }
+      100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+    }
+    @keyframes blobMorph {
+      0%,100% { border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%; }
+      33%      { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+      66%      { border-radius: 30% 70% 70% 30% / 30% 70% 30% 70%; }
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      #about, #contact { grid-template-columns: 1fr; }
+      .about-visual { height: 280px; }
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      section { padding: 70px 24px; }
+      .form-row { grid-template-columns: 1fr; }
+      .appt-wrapper { padding: 28px 18px; }
+    }
+
+    /* ─── SINHALA FONT ─── */
+    .si { font-family: 'Noto Sans Sinhala', 'Cormorant Garamond', serif; }
+
+    /* ─── SCROLL REVEAL ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity .8s ease, transform .8s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+<!-- Language Toggle -->
+<div id="lang-toggle">
+  <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+  <button id="btn-si" onclick="setLang('si')">සිං</button>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Devindi <span>Salon</span></div>
+  <ul class="nav-links">
+    <li><a href="#services"  data-en="Services"     data-si="සේවාවන්">Services</a></li>
+    <li><a href="#about"     data-en="About"        data-si="අප ගැන">About</a></li>
+    <li><a href="#appointment" data-en="Book Now"   data-si="වෙලාවක් ගන්න">Book Now</a></li>
+    <li><a href="#contact"   data-en="Contact"      data-si="සම්බන්ධ වන්න">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay"></div>
+
+  <!-- floating petals -->
+  <div class="petal-float" style="width:18px;height:18px;background:var(--rose);left:10%;animation-duration:9s;animation-delay:0s;"></div>
+  <div class="petal-float" style="width:12px;height:12px;background:var(--gold);left:25%;animation-duration:12s;animation-delay:2s;"></div>
+  <div class="petal-float" style="width:22px;height:22px;background:var(--blush);left:70%;animation-duration:8s;animation-delay:1s;"></div>
+  <div class="petal-float" style="width:10px;height:10px;background:var(--rose);left:85%;animation-duration:11s;animation-delay:3s;"></div>
+  <div class="petal-float" style="width:16px;height:16px;background:var(--deep);left:50%;animation-duration:10s;animation-delay:1.5s;"></div>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow" data-en="✦ Welcome to ✦" data-si="✦ へ へ ✦">✦ Welcome to ✦</p>
+    <h1 class="hero-title">Devindi <em>Salon</em></h1>
+    <p class="hero-sub" data-en="Where beauty meets elegance — crafted just for you." data-si="ලස්සන හා කලාව හමුවෙන් ස්ථානය — ඔබ වෙනුවෙන්ම.">Where beauty meets elegance — crafted just for you.</p>
+    <div class="hero-btns">
+      <a href="#appointment" class="btn-primary" data-en="Book Appointment" data-si="වෙලාවක් වෙන් කරන්න">Book Appointment</a>
+      <a href="#services" class="btn-outline" data-en="Our Services" data-si="අපගේ සේවාවන්">Our Services</a>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="reveal">
+    <p class="section-label" data-en="What We Offer" data-si="අප ලබා දෙන දෑ">What We Offer</p>
+    <h2 class="section-title" data-en="Our Services" data-si="අපගේ සේවාවන්">Our Services</h2>
+    <div class="divider"></div>
+    <p class="section-desc" data-en="Indulge in our full range of luxury beauty treatments, tailored to bring out your best self." data-si="ඔබේ ලස්සන ඉස්මතු කිරීමට නිර්මාණය කළ අපගේ සෞඛ්‍ය සේවා රාශිය භුක්ති විඳින්න.">Indulge in our full range of luxury beauty treatments, tailored to bring out your best self.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <div class="service-icon">✂️</div>
+      <div class="service-name" data-en="Hair Cutting & Styling" data-si="හිසකෙස් කැපීම හා සකස් කිරීම">Hair Cutting & Styling</div>
+      <div class="service-desc" data-en="Expert cuts and blowouts for all hair types, from classic to modern trends." data-si="සම්භාව්‍ය සිට නවීන ශෛලීන් දක්වා සියලු හිසකෙස් වර්ග සඳහා.">Expert cuts and blowouts for all hair types, from classic to modern trends.</div>
+      <div class="service-price" data-en="From LKR 800" data-si="LKR 800 සිට">From LKR 800</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">🎨</div>
+      <div class="service-name" data-en="Hair Coloring" data-si="හිසකෙස් වර්ණ ගැන්වීම">Hair Coloring</div>
+      <div class="service-desc" data-en="Full color, highlights, balayage, ombre, and toning with premium products." data-si="ගුණාත්මක නිෂ්පාදන සහිත සම්පූර්ණ වර්ණය, hairstyle, balayage සේවා.">Full color, highlights, balayage, ombre, and toning with premium products.</div>
+      <div class="service-price" data-en="From LKR 2,500" data-si="LKR 2,500 සිට">From LKR 2,500</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">💆</div>
+      <div class="service-name" data-en="Hair Treatments" data-si="හිසකෙස් ප්‍රතිකාර">Hair Treatments</div>
+      <div class="service-desc" data-en="Keratin, protein treatments, deep conditioning, and scalp care for healthy, lustrous hair." data-si="Keratin, ප්‍රෝටීන් ප්‍රතිකාර, ගැඹුරු conditioning හා නිරෝගී හිසකෙස් සඳහා.">Keratin, protein treatments, deep conditioning, and scalp care for healthy, lustrous hair.</div>
+      <div class="service-price" data-en="From LKR 3,000" data-si="LKR 3,000 සිට">From LKR 3,000</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">💅</div>
+      <div class="service-name" data-en="Manicure & Pedicure" data-si="Manicure & Pedicure">Manicure & Pedicure</div>
+      <div class="service-desc" data-en="Classic, gel, and nail art treatments for hands and feet, with luxury care." data-si="හස්ත හා පාද සඳහා classic, gel සහ nail art ප්‍රතිකාර.">Classic, gel, and nail art treatments for hands and feet, with luxury care.</div>
+      <div class="service-price" data-en="From LKR 1,200" data-si="LKR 1,200 සිට">From LKR 1,200</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">✨</div>
+      <div class="service-name" data-en="Facials & Skin Care" data-si="Facial හා සම රැකවරණය">Facials & Skin Care</div>
+      <div class="service-desc" data-en="Cleansing, brightening, anti-aging facials, and skin consultations for glowing skin." data-si="දිලිසෙන සමක් සඳහා cleansing, brightening, anti-aging facials.">Cleansing, brightening, anti-aging facials, and skin consultations for glowing skin.</div>
+      <div class="service-price" data-en="From LKR 1,500" data-si="LKR 1,500 සිට">From LKR 1,500</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">👰</div>
+      <div class="service-name" data-en="Bridal Packages" data-si="මනාලිය ඇසුරුම්">Bridal Packages</div>
+      <div class="service-desc" data-en="Complete bridal makeup, hair styling, mehendi, and full-day packages for your special day." data-si="ඔබේ විශේෂ දිනය සඳහා සම්පූර්ණ bridal makeup, hair styling, mehendi.">Complete bridal makeup, hair styling, mehendi, and full-day packages for your special day.</div>
+      <div class="service-price" data-en="From LKR 15,000" data-si="LKR 15,000 සිට">From LKR 15,000</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">💄</div>
+      <div class="service-name" data-en="Makeup" data-si="Makeup">Makeup</div>
+      <div class="service-desc" data-en="Party, bridal, editorial, and everyday makeup with premium cosmetics." data-si="Party, bridal, editorial හා everyday makeup ගුණාත්මක cosmetics සමඟ.">Party, bridal, editorial, and everyday makeup with premium cosmetics.</div>
+      <div class="service-price" data-en="From LKR 2,000" data-si="LKR 2,000 සිට">From LKR 2,000</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">🧖</div>
+      <div class="service-name" data-en="Waxing & Threading" data-si="Waxing & Threading">Waxing & Threading</div>
+      <div class="service-desc" data-en="Full body waxing, eyebrow threading, and upper lip treatments with care." data-si="Full body waxing, eyebrow threading, upper lip ප්‍රතිකාර.">Full body waxing, eyebrow threading, and upper lip treatments with care.</div>
+      <div class="service-price" data-en="From LKR 300" data-si="LKR 300 සිට">From LKR 300</div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">🌸</div>
+      <div class="service-name" data-en="Spa & Relaxation" data-si="Spa හා විවේකය">Spa & Relaxation</div>
+      <div class="service-desc" data-en="Head massage, body massage, steam, and full spa packages for total relaxation." data-si="Head massage, body massage, steam සහ සම්පූර්ණ spa ඇසුරුම්.">Head massage, body massage, steam, and full spa packages for total relaxation.</div>
+      <div class="service-price" data-en="From LKR 2,000" data-si="LKR 2,000 සිට">From LKR 2,000</div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-visual reveal">
+    <div class="about-blob"></div>
+    <div class="about-card card1">
+      <div class="about-card-num">500+</div>
+      <div class="about-card-label" data-en="Happy Clients" data-si="සතුටු ගනුදෙනුකරුවන්">Happy Clients</div>
+    </div>
+    <div class="about-card card2">
+      <div class="about-card-num">8+</div>
+      <div class="about-card-label" data-en="Years of Experience" data-si="අත්දැකීම් වසර">Years of Experience</div>
+    </div>
+  </div>
+  <div class="reveal">
+    <p class="section-label" data-en="Our Story" data-si="අපගේ කතාව">Our Story</p>
+    <h2 class="section-title" data-en="Beauty Is Our Passion" data-si="ලස්සන අපේ ආශාව">Beauty Is Our Passion</h2>
+    <div class="divider"></div>
+    <p class="section-desc" data-en="At Devindi Salon, we believe every person deserves to feel beautiful and confident. With over 8 years of experience, our skilled team uses premium products and the latest techniques to deliver exceptional results. From everyday grooming to bridal transformations, we're here for every moment that matters." data-si="Devindi Salon හිදී, සෑම කෙනෙකුම ලස්සන හා විශ්වාසවන්ත හැඟිමක් ලැබිය යුතු යැයි අපි විශ්වාස කරමු. වසර 8කට වැඩි අත්දැකීමක් සහිතව, අපගේ කණ්ඩායම ඉහළ ගුණාත්මක නිෂ්පාදන සහ නවීන ශිල්ප ක්‍රම භාවිතා කරයි. දෛනික ශෘංගාරයේ සිට bridal වෙනස්වීම් දක්වා, ඔබ සඳහා අපි සිටිමු.">At Devindi Salon, we believe every person deserves to feel beautiful and confident. With over 8 years of experience, our skilled team uses premium products and the latest techniques to deliver exceptional results. From everyday grooming to bridal transformations, we're here for every moment that matters.</p>
+    <br/>
+    <a href="#appointment" class="btn-primary" data-en="Book Your Visit" data-si="ඔබේ සංචාරය වෙන් කරන්න">Book Your Visit</a>
+  </div>
+</section>
+
+<!-- APPOINTMENT -->
+<section id="appointment">
+  <div class="reveal" style="text-align:center;">
+    <p class="section-label" data-en="Reserve Your Spot" data-si="ඔබේ ස්ථානය වෙන් කරන්න">Reserve Your Spot</p>
+    <h2 class="section-title" data-en="Book an Appointment" data-si="Appointment එකක් Book කරන්න">Book an Appointment</h2>
+    <div class="divider" style="margin:20px auto 0;"></div>
+    <p class="section-desc" style="margin:16px auto 0;" data-en="Fill in the form below and we'll confirm your booking as soon as possible." data-si="පහත ආකෘති පත්‍රය පුරවන්න, ඔබේ booking ඉක්මනින් තහවුරු කරන්නෙමු.">Fill in the form below and we'll confirm your booking as soon as possible.</p>
+  </div>
+  <div class="appt-wrapper reveal">
+    <form id="appt-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label data-en="Full Name" data-si="සම්පූර්ණ නම">Full Name</label>
+          <input type="text" name="client_name" required placeholder="Jane Doe" />
+        </div>
+        <div class="form-group">
+          <label data-en="Phone Number" data-si="දුරකථන අංකය">Phone Number</label>
+          <input type="tel" name="client_phone" required placeholder="07X XXX XXXX" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-en="Email Address" data-si="ඊමේල් ලිපිනය">Email Address</label>
+          <input type="email" name="client_email" required placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label data-en="Service" data-si="සේවාව">Service</label>
+          <select name="service" required>
+            <option value="" data-en="-- Select Service --" data-si="-- සේවාව තෝරන්න --">-- Select Service --</option>
+            <option data-en="Hair Cutting & Styling" data-si="හිසකෙස් කැපීම හා සකස් කිරීම">Hair Cutting & Styling</option>
+            <option data-en="Hair Coloring" data-si="හිසකෙස් වර්ණ ගැන්වීම">Hair Coloring</option>
+            <option data-en="Hair Treatments" data-si="හිසකෙස් ප්‍රතිකාර">Hair Treatments</option>
+            <option data-en="Manicure & Pedicure" data-si="Manicure & Pedicure">Manicure & Pedicure</option>
+            <option data-en="Facial & Skin Care" data-si="Facial හා සම රැකවරණය">Facial & Skin Care</option>
+            <option data-en="Bridal Package" data-si="මනාලිය ඇසුරුම">Bridal Package</option>
+            <option data-en="Makeup" data-si="Makeup">Makeup</option>
+            <option data-en="Waxing & Threading" data-si="Waxing & Threading">Waxing & Threading</option>
+            <option data-en="Spa & Relaxation" data-si="Spa හා විවේකය">Spa & Relaxation</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-en="Preferred Date" data-si="අපේක්ෂිත දිනය">Preferred Date</label>
+          <input type="date" name="appt_date" required />
+        </div>
+        <div class="form-group">
+          <label data-en="Preferred Time" data-si="අපේක්ෂිත වේලාව">Preferred Time</label>
+          <input type="time" name="appt_time" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group form-full">
+          <label data-en="Special Requests / Notes" data-si="විශේෂ ඉල්ලීම් / සටහන්">Special Requests / Notes</label>
+          <textarea name="message" placeholder="Any special requests or notes..."></textarea>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn" data-en="✦ Confirm Appointment ✦" data-si="✦ Appointment තහවුරු කරන්න ✦">✦ Confirm Appointment ✦</button>
+      <div id="form-msg"></div>
+    </form>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="reveal">
+    <p class="section-label" data-en="Find Us" data-si="අපව සොයා ගන්න">Find Us</p>
+    <h2 class="section-title" data-en="Contact & Location" data-si="සම්බන්ධතා & ස්ථානය">Contact & Location</h2>
+    <div class="divider"></div>
+    <div class="contact-info">
+      <div class="contact-item">
+        <div class="contact-icon">📍</div>
+        <div>
+          <div class="contact-detail-label" data-en="Address" data-si="ලිපිනය">Address</div>
+          <div class="contact-detail-value">219/B Thalakolavava, Kiralogama</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">📞</div>
+        <div>
+          <div class="contact-detail-label" data-en="Phone" data-si="දුරකථනය">Phone</div>
+          <div class="contact-detail-value"><a href="tel:0705135885" style="color:var(--text);text-decoration:none;">0705 135 885</a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">✉️</div>
+        <div>
+          <div class="contact-detail-label" data-en="Email" data-si="ඊමේල්">Email</div>
+          <div class="contact-detail-value"><a href="mailto:pavanidevindi7@gmail.com" style="color:var(--text);text-decoration:none;">pavanidevindi7@gmail.com</a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">🕐</div>
+        <div>
+          <div class="contact-detail-label" data-en="Opening Hours" data-si="විවෘත වේලාවන්">Opening Hours</div>
+          <div class="contact-detail-value" data-en="Mon – Sat: 8:00 AM – 7:00 PM" data-si="සඳුදා – සෙනසුරාදා: 8:00 AM – 7:00 PM">Mon – Sat: 8:00 AM – 7:00 PM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="reveal">
+    <div class="map-container">
+      <!-- Google Map – searches for Kiralogama area -->
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63336.0!2d80.35!3d8.33!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3afca4b4e8a0c5cf%3A0x8e18f1c57cb6e5a0!2sKiralogama%2C%20Sri%20Lanka!5e0!3m2!1sen!2slk!4v1680000000000!5m2!1sen!2slk"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-logo">Devindi <span>Salon</span></div>
+  <p data-en="219/B Thalakolavava, Kiralogama &nbsp;|&nbsp; 0705 135 885 &nbsp;|&nbsp; pavanidevindi7@gmail.com" data-si="219/B Thalakolavava, Kiralogama &nbsp;|&nbsp; 0705 135 885 &nbsp;|&nbsp; pavanidevindi7@gmail.com">219/B Thalakolavava, Kiralogama &nbsp;|&nbsp; 0705 135 885 &nbsp;|&nbsp; pavanidevindi7@gmail.com</p>
+  <p style="margin-top:14px;" data-en="© 2025 Devindi Salon. All rights reserved." data-si="© 2025 Devindi Salon. සියලු හිමිකම් ඇවිරිණි.">© 2025 Devindi Salon. All rights reserved.</p>
+</footer>
+
+
+<script>
+/* ══════════════════════════════════════════
+   EMAILJS SETUP
+   ══════════════════════════════════════════
+   STEP 1: Go to https://www.emailjs.com and sign up (free)
+   STEP 2: Add a new Email Service (Gmail) and note your SERVICE_ID
+   STEP 3: Create an Email Template with these variables:
+           {{client_name}}, {{client_phone}}, {{client_email}},
+           {{service}}, {{appt_date}}, {{appt_time}}, {{message}}
+           Note your TEMPLATE_ID
+   STEP 4: Go to Account → API Keys, note your PUBLIC_KEY
+   STEP 5: Replace the three values below with yours
+   ══════════════════════════════════════════ */
+
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // ← replace
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // ← replace
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // ← replace
+
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
+document.getElementById('appt-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('.submit-btn');
+  const msg = document.getElementById('form-msg');
+  btn.disabled = true;
+  btn.textContent = currentLang === 'si' ? 'යවමින් සිටී...' : 'Sending...';
+  msg.className = '';
+  msg.style.display = 'none';
+
+  emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, this)
+    .then(() => {
+      msg.className = 'success';
+      msg.textContent = currentLang === 'si'
+        ? '✓ ඔබේ Appointment සාර්ථකව ලැබිණ! ඉක්මනින් සම්බන්ධ වෙමු.'
+        : '✓ Appointment received! We will contact you shortly.';
+      this.reset();
+    })
+    .catch(() => {
+      msg.className = 'error';
+      msg.textContent = currentLang === 'si'
+        ? '✗ දෝෂයක් ඇති විය. කරුණාකර නැවත උත්සාහ කරන්න.'
+        : '✗ Something went wrong. Please try again or call us.';
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = currentLang === 'si' ? '✦ Appointment තහවුරු කරන්න ✦' : '✦ Confirm Appointment ✦';
+    });
+});
+
+/* ══════════════════════════════════════════
+   LANGUAGE TOGGLE
+   ══════════════════════════════════════════ */
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-si').classList.toggle('active', lang === 'si');
+
+  document.querySelectorAll('[data-en]').forEach(el => {
+    el.textContent = el.getAttribute('data-' + lang) || el.textContent;
+    if (lang === 'si') el.classList.add('si');
+    else el.classList.remove('si');
+  });
+
+  // update option elements inside selects
+  document.querySelectorAll('select option[data-en]').forEach(opt => {
+    opt.textContent = opt.getAttribute('data-' + lang) || opt.textContent;
+  });
+}
+
+/* ══════════════════════════════════════════
+   THREE.JS 3D HERO BACKGROUND
+   ══════════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 5);
+
+  // Ambient + directional light
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dirLight = new THREE.DirectionalLight(0xe88fa3, 1.2);
+  dirLight.position.set(5, 8, 5);
+  scene.add(dirLight);
+
+  // Floating 3D spheres / torus
+  const shapes = [];
+  const colors = [0xf9c8d4, 0xe88fa3, 0xc0566e, 0xc9956c, 0xfce8ed];
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  for (let i = 0; i < 18; i++) {
+    const geo = i % 3 === 0
+      ? new THREE.TorusGeometry(rnd(.12, .28), rnd(.04, .1), 16, 60)
+      : i % 3 === 1
+        ? new THREE.SphereGeometry(rnd(.08, .22), 32, 32)
+        : new THREE.OctahedronGeometry(rnd(.1, .22));
+
+    const mat = new THREE.MeshPhongMaterial({
+      color: colors[i % colors.length],
+      shininess: 80,
+      transparent: true,
+      opacity: rnd(.35, .75)
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(rnd(-7, 7), rnd(-4, 4), rnd(-3, 1));
+    mesh.rotation.set(rnd(0, Math.PI), rnd(0, Math.PI), rnd(0, Math.PI));
+    mesh.userData = {
+      rx: rnd(.003, .012) * (Math.random() > .5 ? 1 : -1),
+      ry: rnd(.003, .012) * (Math.random() > .5 ? 1 : -1),
+      vy: rnd(.003, .008) * (Math.random() > .5 ? 1 : -1),
+      oy: mesh.position.y
+    };
+    scene.add(mesh);
+    shapes.push(mesh);
+  }
+
+  let mx = 0, my = 0;
+  window.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth  - .5) * .6;
+    my = (e.clientY / window.innerHeight - .5) * .6;
+  });
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.012;
+    shapes.forEach(s => {
+      s.rotation.x += s.userData.rx;
+      s.rotation.y += s.userData.ry;
+      s.position.y = s.userData.oy + Math.sin(t + s.userData.oy) * .3;
+    });
+    camera.position.x += (mx - camera.position.x) * .03;
+    camera.position.y += (-my - camera.position.y) * .03;
+    camera.lookAt(scene.position);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+
+/* ══════════════════════════════════════════
+   SCROLL REVEAL
+   ══════════════════════════════════════════ */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
